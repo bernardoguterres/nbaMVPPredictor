@@ -1,0 +1,13 @@
+# Development dependencies for NBA MVP Predictor
+
+# Testing
+pytest>=8.0.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.5.0  # Parallel test execution
+
+# Code quality
+ruff>=0.3.0  # Fast Python linter and formatter (replaces black, flake8, isort)
+mypy>=1.8.0
+
+# Install main requirements
+-r requirements.txt

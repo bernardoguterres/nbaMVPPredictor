@@ -1,0 +1,63 @@
+# Ruff configuration for NBA MVP Predictor
+# See https://docs.astral.sh/ruff/configuration/
+
+# Target Python 3.11
+target-version = "py311"
+
+# Line length to match black default
+line-length = 100
+
+[lint]
+# Enable pycodestyle (E, W), Pyflakes (F), and isort (I)
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # Pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "SIM",   # flake8-simplify
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "B008",   # Do not perform function calls in argument defaults
+    "B904",   # Within an except clause, raise exceptions with raise ... from err
+    "N803",   # Argument name should be lowercase (common in ML: X, y)
+    "N806",   # Variable in function should be lowercase (common in ML: X, y)
+]
+
+# Exclude common paths
+exclude = [
+    ".git",
+    ".ruff_cache",
+    "__pycache__",
+    "build",
+    "dist",
+    "venv",
+    ".venv",
+    "data",
+    "outputs",
+]
+
+[lint.per-file-ignores]
+# Tests can use assertions and magic values
+"tests/**" = ["S101", "PLR2004"]
+# Config files can have unused imports
+"src/config.py" = ["F401"]
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Like Black, respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending
+line-ending = "auto"
