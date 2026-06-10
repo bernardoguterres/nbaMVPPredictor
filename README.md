@@ -1,6 +1,6 @@
 # NBA MVP Vote Share Forecasting
 
-[![CI](https://github.com/yourusername/nbaMVPPredictor/workflows/CI/badge.svg)](https://github.com/yourusername/nbaMVPPredictor/actions)
+[![CI](https://github.com/bernardoguterres/nbaMVPPredictor/workflows/CI/badge.svg)](https://github.com/bernardoguterres/nbaMVPPredictor/actions)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 
 A machine learning pipeline for forecasting NBA MVP vote shares using only information available before voting occurs, then ranking candidates each season. Trained on historical data (1991–2024) scraped from Basketball Reference.
@@ -224,7 +224,7 @@ nbaMVPPredictor/
 **Quick Start (Production):**
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/nbaMVPPredictor
+git clone https://github.com/bernardoguterres/nbaMVPPredictor
 cd nbaMVPPredictor
 
 # 2. Install dependencies
@@ -241,7 +241,7 @@ python run_pipeline.py
 **Development Setup:**
 ```bash
 # 1. Clone repository
-git clone https://github.com/yourusername/nbaMVPPredictor
+git clone https://github.com/bernardoguterres/nbaMVPPredictor
 cd nbaMVPPredictor
 
 # 2. Install development dependencies (includes testing, linting, type checking)
