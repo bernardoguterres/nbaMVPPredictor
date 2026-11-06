@@ -1,9 +1,8 @@
 # NBA MVP Vote Share Forecasting
 
-[![CI](https://github.com/bernardoguterres/nbaMVPPredictor/workflows/CI/badge.svg)](https://github.com/bernardoguterres/nbaMVPPredictor/actions)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 
-A machine learning pipeline for forecasting NBA MVP vote shares using only information available before voting occurs, then ranking candidates each season. Trained on historical data (1991–2024) scraped from Basketball Reference.
+A machine learning pipeline for forecasting NBA MVP vote shares using only information available before voting occurs, then ranking candidates each season. The scraper is configured for 1991–2024 Basketball Reference data; downloaded datasets and generated results are not committed, so actual season coverage depends on the local dataset.
 
 ## Project Overview
 
@@ -21,8 +20,8 @@ No post-season or subjective narrative signals are included—only box score sta
 
 ### Data Collection
 Automated scraping from Basketball Reference using Selenium:
-- **MVP voting data**: Historical vote shares (1991–2024)
-- **Player statistics**: Per-game stats for all players across 34 seasons
+- **MVP voting data**: Historical vote shares (configured range: 1991–2024)
+- **Player statistics**: Per-game stats (configured range: 34 seasons; check local coverage)
 - **Team standings**: Win-loss records, playoff positioning, strength metrics
 
 ### Data Processing
@@ -53,7 +52,7 @@ Automated scraping from Basketball Reference using Selenium:
 
 ### Modeling Approach
 
-**Four models trained with Optuna hyperparameter tuning:**
+**Four models, with optional Optuna tuning for Random Forest and XGBoost:**
 - **Ridge Regression** (baseline, α=0.1)
 - **Ridge with Ratios** (adds year-normalized ratio features)
 - **Random Forest** (tuned: n_estimators=93, max_depth=11, min_samples_split=3, max_features=log2)
@@ -62,10 +61,11 @@ Automated scraping from Basketball Reference using Selenium:
 **Time-Aware Rolling Backtest:**
 - Minimum 10 seasons of training data required
 - For each test year Y: train on all years < Y, test on year Y
-- No data leakage: features use only within-season or prior-season information
-- Prevents "peeking" at future MVP outcomes during training
+- This training split alone does not establish an untouched evaluation after hyperparameter selection.
 
-This mimics real-world forecasting: predicting 2022 MVP using only data through 2021.
+The optional [tuning script](src/tune_hyperparameters.py) selects parameters using the last ten eligible seasons. [Model evaluation](src/machine_learning.py) automatically loads `outputs/tables/best_hyperparams.json` when present and reuses those parameters across historical folds. If tuning and evaluation use the same dataset, their seasons overlap: the resulting scores are not an untouched out-of-sample estimate of the tuned procedure. Use separate tuning/evaluation periods or nested tuning before making that claim.
+
+The default [pipeline](run_pipeline.py) does not run tuning, and no tuning JSON is committed; without a local tuning file, evaluation uses defaults. The missing historical artifacts prevent determining whether the reported scores below used overlapping tuning data.
 
 ## Evaluation
 
@@ -83,7 +83,9 @@ MVP prediction is fundamentally a **ranking problem**. Standard regression metri
 
 ## Key Results
 
-**Model Performance (Hyperparameter-Tuned):**
+**Previously reported model performance:**
+
+These figures are retained as historical reports, not a fresh verification. The underlying dataset, tuning file and generated results are not committed. Random Forest and the other models cover different numbers of seasons, so the table is not a common-season comparison.
 
 | Model | Top-1 Accuracy | Top-3 Recall | MRR | Precision@5 | AP | Years |
 |-------|---------------|--------------|-----|-------------|-----|-------|
@@ -96,7 +98,7 @@ MVP prediction is fundamentally a **ranking problem**. Standard regression metri
 - XGBoost: +8.4 points Top-1 accuracy (58.3% → 66.7%)
 - Random Forest: +13.3 points Top-3 recall (80.0% → 93.3%), MRR +0.046
 
-**Season-by-Season Highlights (XGBoost - Best Model):**
+**Previously reported season-by-season highlights (XGBoost):**
 
 | Year | Actual MVP | Predicted Rank | Top-3 Hit |
 |------|-----------|---------------|-----------|
@@ -107,28 +109,30 @@ MVP prediction is fundamentally a **ranking problem**. Standard regression metri
 | 2020 | Giannis Antetokounmpo | 1 | ✓ |
 | 2019 | Giannis Antetokounmpo | 1 | ✓ |
 | ... | ... | ... | ... |
-| **2011** | Derrick Rose | **7** | **✗** |
-| **2005** | Steve Nash | **10** | **✗** |
 
-**Interpretation**: XGBoost (tuned) achieves **66.7% Top-1 accuracy** across 24 seasons, correctly predicting the exact MVP winner in 16 of 24 years. The model places the MVP in the top-3 candidates 70.8% of the time. Mean Reciprocal Rank of 0.745 indicates the average predicted rank is approximately 1.34 (very close to #1).
+Exact historical ranks for the Rose and Nash failure cases below require the original prediction artifacts or a versioned rerun.
+
+**Interpretation of the reported figures**: XGBoost (tuned) achieves **66.7% Top-1 accuracy** across 24 seasons, correctly predicting the exact MVP winner in 16 of 24 years. The model places the MVP in the top-3 candidates 70.8% of the time. MRR 0.745 is the mean of the reciprocal MVP ranks. Its reciprocal (approximately 1.34) is not the arithmetic mean rank; that mean requires the individual season ranks.
 
 **Random Forest** excels at identifying finalists with **93.3% Top-3 recall** (14 of 15 recent seasons had the MVP in top-3), making it ideal for bracket predictions and identifying the final candidate pool.
 
 ## Failure Cases
 
-**Where XGBoost (tuned) struggles (3 major failures out of 24 seasons):**
+**Previously described failure cases:**
 
-1. **2005 - Steve Nash** (predicted rank 7, actual MVP)
+The explanations below are historical interpretations. Exact ranks require the missing prediction artifacts; they do not establish why voters or the model behaved as described.
+
+1. **2005 - Steve Nash** (actual MVP; predicted rank unverified)
    - Point guard winning MVP on a 62-win team but without dominant counting stats
    - Nash's playmaking (11.5 AST) and team transformation narrative overrode traditional scoring metrics
    - Model undervalued passing-first MVP archetype
 
-2. **2006 - Steve Nash** (predicted rank 9, actual MVP)
+2. **2006 - Steve Nash** (actual MVP; previously reported predicted rank 9)
    - Back-to-back MVP with similar profile to 2005
    - Continued undervaluation of pure playmaking without elite scoring
    - Pattern: Model struggles with "pass-first, score-second" MVPs
 
-3. **2011 - Derrick Rose** (predicted rank 6, actual MVP)
+3. **2011 - Derrick Rose** (actual MVP; predicted rank unverified)
    - Youngest MVP ever at age 22 with explosive athleticism narrative
    - Led Bulls to #1 seed but model missed the "new superstar" storyline
    - Voter fatigue with LeBron James (2-time defending MVP) played a role
@@ -162,7 +166,7 @@ SHAP (SHapley Additive exPlanations) values reveal which features drive XGBoost 
 
 Team success (W/L%, L, W) appears 3 times in top-10, confirming the historical pattern that MVPs come from winning teams. The combination of era-normalized individual stats (PTS_R, AST_R) and team context (W/L%) captures the "best player on a great team" MVP archetype.
 
-## Current Season Forecast
+## Historical Forecast Example (2021)
 
 **2021 Season Top-5 Predicted Candidates (Ensemble Model):**
 
@@ -176,7 +180,7 @@ Team success (W/L%, L, W) appears 3 times in top-10, confirming the historical p
 
 The ensemble ranked Jokić #2 (close miss) but significantly underestimated his vote share (predicted 0.338, actual 0.961). This reflects the model's failure to capture the unique narrative of Jokić's first MVP in a COVID-shortened season.
 
-*Note: "Current season" refers to the most recent season in processed data (2021). With updated scraping, this would show 2024-25 in-season predictions.*
+*This is a historical 2021 example, not a current-season forecast. Generated predictions depend on the seasons available in the local processed dataset; the example has not been regenerated here.*
 
 ## Repository Structure
 
@@ -279,7 +283,7 @@ python src/predict_current_season.py
 **Output:**
 - Processed data: `data/processed/player_mvp_stats.csv`
 - Model results: `outputs/tables/model_comparison.csv`
-- Tuned hyperparameters: `outputs/tables/best_hyperparams.json` *(pre-optimized, no need to re-run tuning)*
+- Tuned hyperparameters: `outputs/tables/best_hyperparams.json` *(generated by the optional tuning script; not included in a fresh clone)*
 - Season predictions: `outputs/current_season_forecast.csv`
 - SHAP visualizations: `outputs/figures/shap_*.png`
 
@@ -306,19 +310,11 @@ pytest tests/ -v --cov=src
 
 ### Continuous Integration
 
-GitHub Actions CI runs automatically on every push and pull request to `main`:
-
-- ✅ **Linting** with [ruff](https://docs.astral.sh/ruff/) (fast Python linter)
-- ✅ **Format checking** with ruff format
-- ✅ **Type checking** with mypy
-- ✅ **Test suite** with pytest + coverage
-- ✅ **Optional**: Coverage upload to Codecov
-
-See [.github/workflows/README.md](.github/workflows/README.md) for CI details.
+No GitHub Actions workflow is currently tracked in this repository. Run the local quality checks below; automatic CI is not configured here.
 
 ### Code Quality Checks
 
-Run all CI checks locally before pushing:
+Run these quality checks locally before pushing:
 
 ```bash
 # Lint code
@@ -403,7 +399,7 @@ Each run logs:
 
 **High-Priority Improvements:**
 
-1. **Expand Training Data**: Currently using only 2020–2022 due to incomplete scraping. Re-run scraper for full 1991–2024 range to get ~30 backtested seasons (drastically improves statistical validity of performance estimates).
+1. **Verify Dataset Coverage**: Record the seasons actually present in the local dataset and publish versioned evaluation artifacts. Report observed coverage before rerunning evaluation.
 
 2. **Advanced Metrics Integration**: Add PER (Player Efficiency Rating), BPM (Box Plus/Minus), VORP (Value Over Replacement Player) from Basketball Reference's advanced stats pages. The 2021 Jokić case suggests efficiency metrics matter for modern MVP voting.
 
